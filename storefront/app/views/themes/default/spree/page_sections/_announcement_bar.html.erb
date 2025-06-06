@@ -1,5 +1,5 @@
 <% cache_unless page_builder_enabled?, spree_base_cache_scope.call(section) do %>
-  <% if section.present? && section.text.body.to_plain_text.present? %>
+  <% if section.present? && section.preferred_enabled && section.text.body.to_plain_text.present? %>
     <div
       class='w-full justify-center items-center flex announcement-bar'
       style='<%= section_styles(section) %>'
