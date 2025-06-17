@@ -8,13 +8,7 @@ module Spree
       def edit; end
 
       def update
-        locale_translation_params = permitted_translation_params.to_h.transform_values do |translations|
-          translations[@selected_translation_locale]
-        end
-
-        Mobility.with_locale(@selected_translation_locale) do
-          @resource.update!(locale_translation_params)
-        end
+        update_resource_translations
 
         flash[:success] = Spree.t('notice_messages.translations_saved')
 
@@ -27,12 +21,33 @@ module Spree
 
       private
 
+      def extract_locale_values(translation_params, locale)
+        translation_params.to_h.transform_values do |translations|
+          translations[locale]
+        end
+      end
+
       def permitted_translation_params
-        params.require(:translation).permit(
-          resource_class.translatable_fields.each_with_object({}) do |field, acc|
-            acc[field] = current_store.supported_locales_list.map(&:to_sym)
-          end
-        )
+        base_params = build_translatable_fields_params(resource_class)
+        enhanced_params = add_nested_params_if_needed(base_params)
+
+        params.require(:translation).permit(enhanced_params)
+      end
+
+      def add_nested_params_if_needed(base_params)
+        if @resource.is_a?(Spree::OptionType)
+          base_params.merge!(option_values: [:id, build_translatable_fields_params(Spree::OptionValue)])
+        end
+
+        base_params
+      end
+
+      def build_translatable_fields_params(klass)
+        return {} unless klass.respond_to?(:translatable_fields)
+
+        klass.translatable_fields.each_with_object({}) do |field, acc|
+          acc[field] = current_store.supported_locales_list.map(&:to_sym)
+        end
       end
 
       def resource_class
@@ -78,6 +93,46 @@ module Spree
         when Spree::OptionType
           @resource_name = @resource.name
           @back_path = spree.edit_admin_option_type_path(@resource)
+        end
+      end
+
+      def update_resource_translations
+        if @resource.is_a?(Spree::OptionType)
+          update_option_type_translations
+        else
+          update_standard_translations
+        end
+      end
+
+      def update_standard_translations
+        locale_translation_params = extract_locale_values(permitted_translation_params, @selected_translation_locale)
+        update_with_locale(@resource, locale_translation_params, @selected_translation_locale)
+      end
+
+      def update_option_type_translations
+        option_type_params = extract_locale_values(permitted_translation_params.except(:option_values), @selected_translation_locale)
+
+        update_with_locale(@resource, option_type_params, @selected_translation_locale)
+
+        update_option_values_translations if permitted_translation_params[:option_values].present?
+      end
+
+      def update_option_values_translations
+        option_value_translatable_fields_params = build_translatable_fields_params(Spree::OptionValue)
+
+        permitted_translation_params[:option_values].each_value do |option_value_data|
+          option_value = @resource.option_values.find(option_value_data[:id])
+
+          translatable_data = option_value_data.slice(*option_value_translatable_fields_params.keys)
+          option_value_params = extract_locale_values(translatable_data, @selected_translation_locale)
+
+          update_with_locale(option_value, option_value_params, @selected_translation_locale)
+        end
+      end
+
+      def update_with_locale(resource, params, locale)
+        Mobility.with_locale(locale) do
+          resource.update!(params)
         end
       end
     end
