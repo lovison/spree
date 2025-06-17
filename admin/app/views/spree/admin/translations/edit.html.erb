@@ -24,16 +24,9 @@
         </thead>
         <tbody>
           <% options = { resource: @resource, selected_translation_locale: @selected_translation_locale } %>
-          <% case @resource %>
-          <% when Spree::Product %>
-            <%= render 'spree/admin/translations/products/form', options %>
-          <% when Spree::Taxon %>
-            <%= render 'spree/admin/translations/taxons/form', options %>
-          <% when Spree::Taxonomy %>
-            <%= render 'spree/admin/translations/taxonomies/form', options %>
-          <% when Spree::Store %>
-            <%= render 'spree/admin/translations/stores/form', options %>
-          <% end %>
+          <% partial_name = @resource.class.name.demodulize.underscore.pluralize %>
+
+          <%= render "spree/admin/translations/#{partial_name}/form", options %>
         </tbody>
       </table>
     <% end %>

@@ -75,6 +75,9 @@ module Spree
         when Spree::Store
           @resource_name = @resource.name
           @back_path = spree.edit_admin_store_path(section: "general-settings")
+        when Spree::OptionType
+          @resource_name = @resource.name
+          @back_path = spree.edit_admin_option_type_path(@resource)
         end
       end
     end
