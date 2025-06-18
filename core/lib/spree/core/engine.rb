@@ -241,7 +241,8 @@ module Spree
           Spree::Product,
           Spree::Taxon,
           Spree::Taxonomy,
-          Spree::Store
+          Spree::Store,
+          Spree::OptionType
         ]
 
         Rails.application.config.spree.analytics_events = {
