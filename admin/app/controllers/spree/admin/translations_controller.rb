@@ -71,6 +71,8 @@ module Spree
             spree.edit_admin_option_type_path(@resource)
           when 'Spree::Product'
             spree.edit_admin_product_path(@resource)
+          when 'Spree::Property'
+            spree.edit_admin_option_type_path(@resource)
           when 'Spree::Taxon'
             spree.edit_admin_taxonomy_taxon_path(@resource.taxonomy, @resource.id)
           when 'Spree::Taxonomy'
